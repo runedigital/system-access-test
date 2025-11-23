@@ -168,35 +168,25 @@
     <script>
         // 1. CONTENT DATABASE
         const content = {
-            "realestate": {
-                title: "REAL ESTATE",
-                checks: [
-                    { name: "LEAD RESPONSE LATENCY", result: "CRITICAL (>15m)" },
-                    { name: "DATABASE REACTIVATION", result: "OFFLINE" },
-                    { name: "SMS DELIVERABILITY", result: "FLAGGED" },
-                    { name: "APPOINTMENT AUTO-BOOK", result: "FAILURE" }
-                ]
-            },
-            "solar": {
-                title: "SOLAR ENERGY",
-                checks: [
-                    { name: "UTILITY BILL VERIFICATION", result: "MISSING" },
-                    { name: "CREDIT SCORE FILTER", result: "BYPASSED" },
-                    { name: "HOMEOWNER VALIDATION", result: "UNKNOWN" },
-                    { name: "SHOW RATE METRICS", result: "FAILURE" }
-                ]
-            },
-            "default": {
-                title: "GENERAL SALES",
-                checks: [
-                    { name: "INBOUND TRAFFIC", result: "DETECTED" },
-                    { name: "CONVERSION LOGIC", result: "CORRUPTED" },
-                    { name: "REVENUE LEAKAGE", result: "HIGH" },
-                    { name: "SYSTEM AUTOMATION", result: "OFFLINE" }
-                ]
-            }
-        };
-
+    "realestate": {
+        title: "REAL ESTATE (2025)",
+        checks: [
+            { name: "VIDEO-FIRST RESPONSE", result: "MISSING" },
+            { name: "COMPUTE LATENCY", result: "HIGH (>2s)" },
+            { name: "FTC COMPLIANCE CHECK", result: "FAILED" },
+            { name: "BOT-TO-BOT LOOP", result: "DETECTED" } // When client AI talks to lead AI
+        ]
+    },
+    "solar": {
+        title: "SOLAR ENERGY (2025)",
+        checks: [
+            { name: "DYNAMIC PRICING AGENT", result: "OFFLINE" },
+            { name: "DEEPFAKE FILTER", result: "DISABLED" }, // Huge issue in 2025
+            { name: "REGULATORY SHIELD", result: "EXPOSED" },
+            { name: "CONVERSION VELOCITY", result: "SUB-OPTIMAL" }
+        ]
+    }
+};
         // 2. INITIALIZE
         const params = new URLSearchParams(window.location.search);
         const key = params.get('industry') || 'default';
