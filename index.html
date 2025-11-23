@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>THE FILTER // ACCESS</title>
+    <style>
+        /* --- IMPORT PREVIOUS STYLES HERE (Keep the CSS from the last message) --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;700&family=JetBrains+Mono:wght@400&display=swap');
+
+        body { margin: 0; height: 100vh; background: #000; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .compare-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
+        .layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .layer-chaos { background: #110505; color: #ff4d4d; z-index: 1; }
+        .chaos-word { position: absolute; font-family: 'JetBrains Mono', monospace; opacity: 0.5; animation: shake 0.5s infinite; white-space: nowrap; }
+        .layer-order { background: #05110a; color: #00ff9d; z-index: 2; clip-path: inset(0 0 0 50%); }
+        .order-list { text-align: left; font-size: 2rem; font-weight: bold; line-height: 1.5; }
+        .check { color: #00ff9d; margin-right: 20px; }
+        .item { opacity: 0; transform: translateY(20px); transition: all 0.5s; }
+        .layer-order.revealed .item { opacity: 1; transform: translateY(0); }
+        h1 { font-size: 5vw; text-transform: uppercase; margin: 0; position: relative; z-index: 10; pointer-events: none; mix-blend-mode: overlay; color: white; width: 80%; text-align: center; }
+        .subtitle { font-size: 1.2rem; margin-top: 20px; color: #888; max-width: 600px; text-align: center; line-height: 1.6; z-index: 10; pointer-events: none; }
+        .handle { position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: white; z-index: 100; cursor: col-resize; box-shadow: 0 0 20px rgba(255,255,255,0.5); }
+        .handle::after { content: '< DRAG >'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; white-space: nowrap; }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+
+        /* --- NEW: THE OFFER DOCK --- */
+        .offer-dock {
+            position: fixed;
+            bottom: -150px; /* Hidden by default */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 800px;
+            background: rgba(20, 20, 20, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid #333;
+            border-bottom: none;
+            border-radius: 20px 20px 0 0;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 200;
+            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 -10px 50px rgba(0, 255, 157, 0.1);
+        }
+
+        .offer-dock.active {
+            bottom: 0;
+        }
+
+        /* PRICE BLOCK */
+        .price-block { text-align: left; }
+        .price-label { color: #666; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        .price-val { font-size: 2rem; font-weight: bold; color: #fff; font-family: 'JetBrains Mono', monospace; }
+        .price-note { font-size: 0.8rem; color: #00ff9d; margin-top: 5px; }
+
+        /* GUARANTEE BADGE */
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #333;
+            padding: 8px 15px;
+            border-radius: 30px;
+            background: #000;
+        }
+        .badge-icon { color: #00ff9d; }
+        .badge-text { color: #aaa; font-size: 0.8rem; }
+
+        /* CTA BUTTON */
+        .cta-btn {
+            background: #00ff9d;
+            color: #000;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .cta-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px #00ff9d; }
+        .cta-btn:active { transform: scale(0.95); }
+
+        /* MODAL OVERLAY (The Terminal) */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 300;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+        .terminal-window {
+            width: 500px;
+            background: #111;
+            border: 1px solid #333;
+            padding: 40px;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 0 50px rgba(0, 255, 157, 0.1);
+        }
+        .term-line { color: #00ff9d; margin-bottom: 10px; }
+        .term-input { 
+            background: transparent; border: none; border-bottom: 1px solid #333; 
+            color: white; width: 100%; padding: 10px 0; font-family: inherit; font-size: 1.2rem; outline: none; margin-bottom: 30px;
+        }
+        .term-input:focus { border-color: #00ff9d; }
+
+    </style>
+</head>
+<body>
+
+    <div class="compare-container" id="container">
+        <!-- LAYER 1: CHAOS -->
+        <div class="layer layer-chaos">
+            <h1>Your Inbox Today</h1>
+            <div class="subtitle">Drowning in spam, tire kickers, and "just looking."</div>
+        </div>
+
+        <!-- LAYER 2: ORDER -->
+        <div class="layer layer-order" id="orderLayer">
+            <div class="order-list">
+                <div class="item"><span class="check">✓</span> Validated Phone #s</div>
+                <div class="item"><span class="check">✓</span> Intent Verified</div>
+                <div class="item"><span class="check">✓</span> Booked Appointments</div>
+                <div class="item"><span class="check">✓</span> Zero Admin Work</div>
+            </div>
+            <h1 style="position: absolute; top: 50%; transform:translateY(-250%)">Your Inbox Tomorrow</h1>
+        </div>
+
+        <!-- SLIDER -->
+        <div class="handle" id="handle"></div>
+    </div>
+
+    <!-- THE OFFER DOCK -->
+    <div class="offer-dock" id="offerDock">
+        <div class="price-block">
+            <div class="price-label">System Installation</div>
+            <div class="price-val">$2,497</div>
+            <div class="price-note">No Monthly Retainer. One-time.</div>
+        </div>
+
+        <div class="badge">
+            <span class="badge-icon">🛡</span>
+            <span class="badge-text">30-Day Performance Guarantee</span>
+        </div>
+
+        <button class="cta-btn" onclick="openTerminal()">INSTALL FILTER</button>
+    </div>
+
+    <!-- PAYMENT TERMINAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="terminal-window">
+            <div class="term-line">> INITIALIZING SETUP...</div>
+            <div class="term-line">> ENTER AGENCY NAME:</div>
+            <input type="text" class="term-input" placeholder="Your Company..." autofocus>
+            
+            <div class="term-line">> ENTER EMAIL FOR INVOICE:</div>
+            <input type="email" class="term-input" placeholder="you@agency.com">
+            
+            <button class="cta-btn" style="width:100%; margin-top:20px;" onclick="alert('Link to Stripe would go here.')">GENERATE INVOICE</button>
+            <div style="text-align:center; margin-top:15px; color:#444; font-size:0.8rem; cursor:pointer;" onclick="closeTerminal()">[CANCEL PROCESS]</div>
+        </div>
+    </div>
+
+    <script>
+        // --- CHAOS WORD GENERATION (Same as before) ---
+        const chaosLayer = document.querySelector('.layer-chaos');
+        const trashWords = ["Wrong Number", "I'm Broke", "Stop Texting", "Spam Risk", "No Money", "Unsubscribe"];
+        for(let i=0; i<30; i++) {
+            const el = document.createElement('div');
+            el.className = 'chaos-word';
+            el.innerText = trashWords[Math.floor(Math.random()*trashWords.length)];
+            el.style.left = Math.random()*100+'%'; el.style.top = Math.random()*100+'%';
+            el.style.fontSize = (Math.random()*2+0.5)+'rem';
+            chaosLayer.appendChild(el);
+        }
+
+        // --- INTERACTION LOGIC ---
+        const container = document.getElementById('container');
+        const layerOrder = document.getElementById('orderLayer');
+        const handle = document.getElementById('handle');
+        const offerDock = document.getElementById('offerDock');
+        const modal = document.getElementById('modal');
+
+        function updateSlide(pct) {
+            layerOrder.style.clipPath = `inset(0 0 0 ${pct}%)`;
+            handle.style.left = `${pct}%`;
+
+            // SHOW OFFER: If they drag to the left (Revealing Order)
+            // "Order" is revealed when clip-path inset is small (Low Percentage)
+            // Wait, logic check: 
+            // inset(0 0 0 100%) = Full Crop (Hidden) -> Right side of screen
+            // inset(0 0 0 0%) = No Crop (Visible) -> Left side of screen
+            
+            // So if pct < 50 (Mostly Revealed), show the offer
+            if(pct < 40) {
+                offerDock.classList.add('active');
+                layerOrder.classList.add('revealed');
+            } else {
+                offerDock.classList.remove('active');
+                layerOrder.classList.remove('revealed');
+            }
+        }
+
+        container.addEventListener('mousemove', (e) => {
+            const pct = (e.clientX / window.innerWidth) * 100;
+            updateSlide(pct);
+        });
+
+        container.addEventListener('touchmove', (e) => {
+            const pct = (e.touches[0].clientX / window.innerWidth) * 100;
+            updateSlide(pct);
+        });
+
+        function openTerminal() { modal.classList.add('open'); }
+        function closeTerminal() { modal.classList.remove('open'); }
+
+        // Init
+        updateSlide(50);
+
+    </script>
+</body>
+</html>
