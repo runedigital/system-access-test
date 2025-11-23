@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PROTOCOL // DIAGNOSTIC_TOOL</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --bg: #050505;
+            --grid: #111;
+            --red: #ff3333;
+            --green: #33ff33;
+            --amber: #ffcc00;
+            --scan-color: rgba(51, 255, 51, 0.1);
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: var(--bg);
+            background-image: 
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* CRT VIGNETTE & SCANLINE */
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 60%, black 150%);
+            pointer-events: none; z-index: 50;
+        }
+        .scanline {
+            position: fixed; top: 0; left: 0; width: 100%; height: 5px;
+            background: var(--scan-color);
+            animation: scan 4s linear infinite;
+            pointer-events: none; z-index: 40; opacity: 0.5;
+        }
+        @keyframes scan { 0% { top: -10%; } 100% { top: 110%; } }
+
+        /* MAIN CONTAINER */
+        .terminal-wrapper {
+            width: 90%;
+            max-width: 700px;
+            border: 1px solid #333;
+            background: rgba(10, 10, 10, 0.95);
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            position: relative;
+            z-index: 10;
+            padding: 40px;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .brand { font-size: 2rem; letter-spacing: 4px; color: white; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .meta { text-align: right; font-size: 0.8rem; color: #666; }
+
+        /* DIAGNOSTIC LIST */
+        .check-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed #222;
+            padding: 15px 0;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+        .check-row.active { opacity: 1; background: rgba(51, 255, 51, 0.02); }
+        .label { font-size: 1.1rem; color: #aaa; }
+        .status { font-weight: bold; min-width: 120px; text-align: right; }
+        
+        /* STATUS COLORS */
+        .wait { color: var(--amber); animation: blink 0.5s infinite; }
+        .fail { color: var(--red); text-shadow: 0 0 8px var(--red); }
+        .pass { color: var(--green); }
+
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        /* WAITLIST MODULE (Hidden Initially) */
+        .lockout-panel {
+            margin-top: 40px;
+            border: 1px solid #444;
+            background: #000;
+            padding: 25px;
+            display: none; /* Revealed by JS */
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .capacity-header {
+            display: flex; justify-content: space-between; font-size: 0.9rem; color: #888; margin-bottom: 10px;
+        }
+        .bar { width: 100%; height: 8px; background: #222; position: relative; margin-bottom: 20px; }
+        .fill { width: 98%; height: 100%; background: var(--red); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+
+        .msg { font-size: 0.9rem; line-height: 1.6; color: #ddd; margin-bottom: 20px; }
+        
+        .input-group { display: flex; gap: 10px; }
+        input {
+            flex: 1; background: #111; border: 1px solid #444; color: white; padding: 12px;
+            font-family: inherit; font-size: 1rem; outline: none;
+        }
+        input:focus { border-color: var(--green); }
+        
+        button {
+            background: white; color: black; border: none; padding: 0 25px;
+            font-family: inherit; font-weight: bold; cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: var(--green); }
+
+    </style>
+</head>
+<body>
+
+    <div class="scanline"></div>
+
+    <div class="terminal-wrapper">
+        
+        <div class="header">
+            <div class="brand">PROTOCOL</div>
+            <div class="meta">
+                TARGET: <span id="target-sector">Loading...</span><br>
+                SYS_VER: 4.0.2
+            </div>
+        </div>
+
+        <div id="diagnostic-container">
+            <!-- Checks inject here -->
+        </div>
+
+        <!-- WAITLIST / LOCKOUT PANEL -->
+        <div class="lockout-panel" id="lockout">
+            <div class="capacity-header">
+                <span>SERVER LOAD</span>
+                <span style="color: var(--red)">CRITICAL (98%)</span>
+            </div>
+            <div class="bar"><div class="fill"></div></div>
+            
+            <div class="msg">
+                <strong>DIAGNOSTIC RESULT: SYSTEM FAILURE IMMINENT.</strong><br><br>
+                Patch deployment is currently paused due to server capacity constraints. 
+                <br>Join the priority queue to be notified when a slot opens.
+            </div>
+
+            <div class="input-group">
+                <input type="email" placeholder="enter_agency_email...">
+                <button onclick="submitForm()">JOIN QUEUE</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 1. CONTENT DATABASE
+        const content = {
+            "realestate": {
+                title: "REAL ESTATE",
+                checks: [
+                    { name: "LEAD RESPONSE LATENCY", result: "CRITICAL (>15m)" },
+                    { name: "DATABASE REACTIVATION", result: "OFFLINE" },
+                    { name: "SMS DELIVERABILITY", result: "FLAGGED" },
+                    { name: "APPOINTMENT AUTO-BOOK", result: "FAILURE" }
+                ]
+            },
+            "solar": {
+                title: "SOLAR ENERGY",
+                checks: [
+                    { name: "UTILITY BILL VERIFICATION", result: "MISSING" },
+                    { name: "CREDIT SCORE FILTER", result: "BYPASSED" },
+                    { name: "HOMEOWNER VALIDATION", result: "UNKNOWN" },
+                    { name: "SHOW RATE METRICS", result: "FAILURE" }
+                ]
+            },
+            "default": {
+                title: "GENERAL SALES",
+                checks: [
+                    { name: "INBOUND TRAFFIC", result: "DETECTED" },
+                    { name: "CONVERSION LOGIC", result: "CORRUPTED" },
+                    { name: "REVENUE LEAKAGE", result: "HIGH" },
+                    { name: "SYSTEM AUTOMATION", result: "OFFLINE" }
+                ]
+            }
+        };
+
+        // 2. INITIALIZE
+        const params = new URLSearchParams(window.location.search);
+        const key = params.get('industry') || 'default';
+        const data = content[key] || content['default'];
+
+        document.getElementById('target-sector').innerText = data.title;
+        const container = document.getElementById('diagnostic-container');
+        const lockout = document.getElementById('lockout');
+
+        // 3. RUN ANIMATION SEQUENCE
+        let currentStep = 0;
+
+        function runCheck() {
+            if (currentStep >= data.checks.length) {
+                // End of checks, show Lockout
+                setTimeout(() => {
+                    lockout.style.display = 'block';
+                }, 500);
+                return;
+            }
+
+            const check = data.checks[currentStep];
+            
+            // Create Row
+            const row = document.createElement('div');
+            row.className = 'check-row';
+            row.innerHTML = `
+                <div class="label">${check.name}</div>
+                <div class="status wait">ANALYZING...</div>
+            `;
+            container.appendChild(row);
+
+            // Reveal Row
+            setTimeout(() => { row.classList.add('active'); }, 100);
+
+            // Fail Row
+            setTimeout(() => {
+                const stat = row.querySelector('.status');
+                stat.className = 'status fail';
+                stat.innerText = check.result;
+                
+                currentStep++;
+                runCheck(); // Loop
+            }, 800); // 800ms delay per check
+        }
+
+        // Start after 500ms
+        setTimeout(runCheck, 500);
+
+        // 4. FORM HANDLER
+        function submitForm() {
+            const btn = document.querySelector('button');
+            btn.innerText = "PROCESSING...";
+            
+            setTimeout(() => {
+                btn.style.background = "#33ff33";
+                btn.style.color = "black";
+                btn.innerText = "CONFIRMED";
+                alert("You have been added to the priority queue. Position: #3.");
+            }, 1500);
+        }
+
+    </script>
+</body>
+</html>
